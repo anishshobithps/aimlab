@@ -1,52 +1,49 @@
-import heapq
+def calculate_cost(graph_weights, condition, weight=1):
+    cost = {}
+    if 'AND' in condition:
+        and_nodes = condition['AND']
+        cost[' AND '.join(and_nodes)] = sum(graph_weights[node] + weight for node in and_nodes)
+ 
+    if 'OR' in condition:
+        or_nodes = condition['OR']
+        cost[' OR '.join(or_nodes)] = min(graph_weights[node] + weight for node in or_nodes)
 
-class Graph:
-    def __init__(self, graph, heuristic_node_list, start_node):
-        self.graph, self.H, self.start = graph, heuristic_node_list, start_node
-        self.parent, self.status, self.solution_graph = {}, {}, {}
+    return cost
 
-    def ao_star(self):
-        pq = [(0, self.start)]
-        while pq:
-            cost, v = heapq.heappop(pq)
-            if self.status.get(v, 0) == -1:
-                continue
-            min_cost, child_node_list = self.compute_minimum_cost_child_nodes(v)
-            self.H[v] = min_cost
-            self.status[v] = len(child_node_list)
-            solved = all(self.status.get(child_node, 0) != -1 for child_node in child_node_list)
-            if solved:
-                self.status[v] = -1
-                self.solution_graph[v] = child_node_list
-                if v != self.start:
-                    heapq.heappush(pq, (self.H[self.parent[v]], self.parent[v]))
-            for child_node in child_node_list:
-                if self.status.get(child_node, 0) != -1:
-                    self.parent[child_node] = v
-                    heapq.heappush(pq, (self.H[child_node], child_node))
-                    self.status[child_node] = 0
+def update_cost(graph_weights, conditions, weight=1):
+    least_cost = {}
+    for key, current_condition in reversed(conditions.items()):
+        current_cost = calculate_cost(graph_weights, current_condition, weight)
+        graph_weights[key] = min(current_cost.values())
+        least_cost[key] = current_cost
+        print(f'{key}: {conditions[key]} >>> {current_cost}')
+    
+    return least_cost
 
-    def compute_minimum_cost_child_nodes(self, v):
-        min_cost, min_nodes = float('inf'), []
-        for node_info_tuple_list in self.graph.get(v, []):
-            cost = sum(self.H.get(c, 0) + weight for c, weight in node_info_tuple_list)
-            if cost < min_cost:
-                min_cost, min_nodes = cost, [c for c, _ in node_info_tuple_list]
-        return min_cost, min_nodes
+def shortest_path(start, updated_cost, graph_weights):
+    if start not in updated_cost:
+        return start
+    
+    min_cost_key, min_cost = min(updated_cost[start].items(), key=lambda x: x[1])
 
-    def print_solution(self):
-        print(f"Starting Node: {self.start}\nSolution: {self.solution_graph}")
+    if len(min_cost_key.split()) == 1:
+        return start + '<--' + shortest_path(min_cost_key, updated_cost, graph_weights)
+    else:
+        return (
+            start + '<--(' + min_cost_key + ') [' +
+            shortest_path(min_cost_key.split()[0], updated_cost, graph_weights) + ' + ' +
+            shortest_path(min_cost_key.split()[-1], updated_cost, graph_weights) + ']'
+        )
 
+H =  {'A':1,'B':6,'C':2,'D':12,'E':2,'F':1,'G':5,'H':7,'I':7,'J':1,'T':3}
 
-h1 = {'A':1,'B':6,'C':2,'D':12,'E':2,'F':1,'G':5,'H':7,'I':7,'J':1,'T':3}
-graph1 = {
-    'A': [[('B',1),('C',1)],[('D',1)]],
-    'B': [[('G',1)],[('H',1)]],
-    'C': [[('J',1)]],
-    'D': [[('E',1),('F',1)]],
-    'G': [[('I',1)]]
+conditions = {
+    'A': {'AND': ['B', 'C'], 'OR': ['D']},
+    'B': {'AND': ['G'], 'OR':['H']},
+    'C': {'AND': ['J']},
+    'D': {'AND': ['E'], 'OR': ['F']},
+    'G': {'AND': ['I']}
 }
 
-G1 = Graph(graph1, h1, 'A')
-G1.ao_star()
-G1.print_solution()
+updated_cost = update_cost(H, conditions, weight=1)
+print('Shortest Path:\n', shortest_path('A', updated_cost, H))
