@@ -8,7 +8,7 @@ def aStarAlgo(start, goal):
     parents = {}
 
     while open_set:
-        _, current = heapq.heappop(open_set)
+        current = heapq.heappop(open_set)[1]
         if current == goal:
             path = []
             while current in parents:
@@ -19,16 +19,16 @@ def aStarAlgo(start, goal):
             return path
         
         for neighbor, weight in graph.get(current, []):
-            tentative_g = g[current] + weight
-            if tentative_g < g[neighbor]:
+            cost = g[current] + weight
+            if cost < g[neighbor]:
                 parents[neighbor] = current
-                g[neighbor] = tentative_g
-                heapq.heappush(open_set, (tentative_g + heuristic(neighbor, goal), neighbor))
+                g[neighbor] = cost
+                heapq.heappush(open_set, (cost + heuristic(neighbor), neighbor))
     
     print('Path doesn\'t exist!')
     return None
 
-def heuristic(node, goal):
+def heuristic(node):
     return {
         'A': 11,
         'B': 6,

@@ -24,7 +24,7 @@ def shortest_path(start, updated_cost, graph_weights):
     if start not in updated_cost:
         return start
     
-    min_cost_key, min_cost = min(updated_cost[start].items(), key=lambda x: x[1])
+    min_cost_key, _ = min(updated_cost[start].items(), key=lambda x: x[1])
 
     if len(min_cost_key.split()) == 1:
         return start + '<--' + shortest_path(min_cost_key, updated_cost, graph_weights)
